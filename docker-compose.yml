@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Dashboard Service (Web UI)
+  dashboard:
+    build: .
+    container_name: walmart_dashboard
+    restart: unless-stopped
+    ports:
+      - "80:5173"  # Expose Vite on port 80
+    volumes:
+      - ./public/data:/app/public/data  # Persist data
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+
+  # Scraper Service (Runs daily via cron definition inside or separate scheduler)
+  # For simple setups, we can run it as a one-off container or keep it idle
+  scraper:
+    build: .
+    container_name: walmart_scraper
+    volumes:
+      - ./public/data:/app/public/data # Share data volume
+    command: tail -f /dev/null # Keep alive so we can exec into it via cron on host
