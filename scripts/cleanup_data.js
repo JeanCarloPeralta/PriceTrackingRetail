@@ -101,7 +101,9 @@ function cleanup() {
         'computación', 'celulares', 'televisiones', 'audio',
         'hogar', 'ferreteria', 'ferretería', 'automotriz',
         'juguetes', 'deportes', 'ropa', 'moda', 'muebles',
-        'oficina', 'papeleria', 'papelería', 'accesorios'
+        'oficina', 'papeleria', 'papelería', 'accesorios',
+        'frutas y verduras', 'carnes y pescados', 'carnicería', 'frescos',
+        'pescadería', 'aves y carnes'
     ];
 
     const filteredList = finalProducts.filter(p => {
@@ -115,6 +117,35 @@ function cleanup() {
 
     console.log(`Removed ${finalProducts.length - filteredList.length} non-grocery products.`);
     finalProducts = filteredList;
+
+    // --- STEP 3: UPC METADATA SYNC (DEDUPLICATION) ---
+    console.log(`Syncing metadata for multi-store UPCs...`);
+    const masterByUpc = new Map();
+    
+    // Pass 1: Identify best metadata for each UPC
+    finalProducts.forEach(p => {
+        if (!p.upc || p.upc === 'N/A') return;
+        const existing = masterByUpc.get(p.upc);
+        if (!existing || p.name.length > existing.name.length) {
+            masterByUpc.set(p.upc, p);
+        }
+    });
+
+    // Pass 2: Apply master metadata to all records of same UPC
+    finalProducts.forEach(p => {
+        if (!p.upc || p.upc === 'N/A') return;
+        const master = masterByUpc.get(p.upc);
+        if (master && master !== p) {
+            p.name = master.name;
+            p.brand = master.brand;
+            p.presentation = master.presentation;
+            p.image = master.image;
+            p.category = master.category;
+            p.breadcrumbs = master.breadcrumbs;
+        }
+    });
+
+    console.log(`Metadata sync complete for ${masterByUpc.size} unique UPCs.`);
 
     console.log(`Cleanup complete! Reduced from ${products.length} to ${finalProducts.length} unique products.`);
 

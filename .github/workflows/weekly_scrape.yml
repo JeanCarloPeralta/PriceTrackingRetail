@@ -1,0 +1,43 @@
+name: Weekly Price Scrape
+
+on:
+  schedule:
+    # Runs every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write # Needed to push data back
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Full Scrape
+        run: npm run scrape:all
+        env:
+          # If we ever need API keys or service accounts, they go here
+          SERVICE_ACCOUNT_KEY: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+
+      - name: Commit and Push Data
+        run: |
+          git config --global user.name "PriceTrack Bot"
+          git config --global user.email "bot@pricetrack.retail"
+          git add public/data/products.json
+          git commit -m "Automated Weekly Scrape: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push origin main

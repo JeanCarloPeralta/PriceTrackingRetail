@@ -9,6 +9,7 @@ The project is deployed and live at: [https://pulperia-m-9137d.web.app/](https:/
 - **Automated Web Scraping:** Uses Puppeteer to extract accurate product data, pricing, and UPCs from major retailer websites.
 - **Data Dashboard:** A React-based interface to analyze product data, overlapping inventory, and price comparisons.
 - **Firebase Integration:** Seamless storage of scraped data in Firestore and deployment via Firebase Hosting.
+- **Weekly Automated Scraping:** Configured with GitHub Actions to run a full price scan every **Monday at 00:00 UTC**.
 
 ## How to Run Locally
 
