@@ -1,4 +1,4 @@
-name: Weekly Price Scrape
+name: Weekly Price Scrape & Deploy
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
-  scrape:
+  scrape-and-deploy:
     runs-on: ubuntu-latest
     
     permissions:
@@ -30,9 +30,6 @@ jobs:
 
       - name: Run Full Scrape
         run: npm run scrape:all
-        env:
-          # If we ever need API keys or service accounts, they go here
-          SERVICE_ACCOUNT_KEY: ${{ secrets.SERVICE_ACCOUNT_KEY }}
 
       - name: Commit and Push Data
         run: |
@@ -41,3 +38,14 @@ jobs:
           git add public/data/products.json
           git commit -m "Automated Weekly Scrape: $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push origin main
+
+      - name: Build Dashboard
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PULPERIA_M_9137D }}'
+          projectId: pulperia-m-9137d
+          channelId: live
