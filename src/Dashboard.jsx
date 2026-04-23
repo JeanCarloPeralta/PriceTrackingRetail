@@ -40,6 +40,19 @@ const PieChartIcon = () => (
     </svg>
 );
 
+const PriceTrackLogo = () => (
+    <div className="relative flex items-center justify-center bg-blue-600 rounded-xl p-2 shadow-sm mr-1">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 border-2 border-blue-600 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        </div>
+    </div>
+);
+
 const Dashboard = () => {
     // Initial state empty, populate via fetch
     const [products, setProducts] = useState([]);
@@ -321,7 +334,7 @@ const Dashboard = () => {
                     <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <div>
                             <div className="flex items-center gap-3 mb-1">
-                                <img src="/logo.png" alt="Price Track Logo" className="w-10 h-10 object-contain" />
+                                <PriceTrackLogo />
                                 <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
                                     Price Track
                                 </h1>
