@@ -29,7 +29,7 @@ const ProductHistoryModal = ({ products, onClose }) => {
                     <div className={`grid grid-cols-1 md:grid-cols-${Math.min(products.length, 3)} gap-6`}>
                         {products.map((product) => {
                             // Sort history newest first (reverse chronological)
-                            const sortedHistory = [...(product.history || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+                            const sortedHistory = [...(product.priceHistory || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
                             
                             // Badge matching
                             const isWalmart = product.store === 'Walmart';
