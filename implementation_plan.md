@@ -13,7 +13,7 @@
 - [x] **Alcoholic Beverages Support**: Added keywords for beer, wine, and liquor.
 - [x] **Perishable Exclusion**: Updated cleanup logic to remove fresh produce/meats.
 - [x] **Category Refining**: Improved category filtering to keep only non-perishable groceries.
-- [ ] **UPC Deduplication**: Ensure multi-store products are perfectly merged by UPC.
+- [x] **UPC Deduplication**: Ensure multi-store products are perfectly merged by UPC (Metadata Sync).
 
 ### 2. Analytics & Insights
 - [x] **Comparative Basket**: Formula implementation for MxM vs Walmart pricing gap.
@@ -28,9 +28,9 @@
 - [x] **Dynamic Submenu**: Added monitoring status and store list to header.
 
 ### 4. Automation & Scaling (Next Steps)
-- [ ] **Weekly Scrape Setup**: Configure automated runs for every Monday.
-- [ ] **Cloud Functions / GitHub Actions**: Move scraping to a scheduled cloud environment.
-- [ ] **Multi-Currency Support**: (Optional) Handle Colones vs Dollars if needed.
+- [x] **Weekly Scrape Setup**: Configure automated runs for every Monday via GitHub Actions.
+- [x] **Cloud Functions / GitHub Actions**: Move scraping to a scheduled cloud environment.
+- [ ] **Data Integrity Audit**: Continuous monitoring of UPC accuracy.
 
 ## Current Focus
-We are finalizing Phase 2. The CSV export and primary analytics are working. The next big step is establishing the **Weekly Scrape Automation** to ensure the "Monday updates" happen without manual intervention.
+We have successfully implemented the **Weekly Scrape Automation** and **UPC Metadata Sync**. The project is now in a stable production state. The next steps involve a Brand-based filter and ongoing data integrity audits.
