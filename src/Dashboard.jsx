@@ -320,10 +320,20 @@ const Dashboard = () => {
                 <header className="flex flex-col gap-6 mb-12">
                     <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <div>
-                            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-1">
-                                Grocery Intelligence
-                            </h1>
-                            <p className="text-slate-500 font-medium">Competitive retail dashboard for store managers</p>
+                            <div className="flex items-center gap-3 mb-1">
+                                <img src="/logo.png" alt="Price Track Logo" className="w-10 h-10 object-contain" />
+                                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+                                    Price Track
+                                </h1>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-500 font-medium">
+                                <span>Retail Intelligence</span>
+                                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                                    Monitoring: Walmart, Masxmenos & Auto Mercado
+                                </span>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-4 mt-4 md:mt-0">
@@ -331,13 +341,7 @@ const Dashboard = () => {
                                 <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${activeTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Dashboard</button>
                                 <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${activeTab === 'audit' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>UPC Audit</button>
                             </div>
-                            <button className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md transition-all font-bold flex items-center gap-2"
-                                onClick={fetchProducts}
-                                disabled={loading}
-                            >
-                                <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                {loading ? 'Refreshing...' : 'Refresh'}
-                            </button>
+
                         </div>
                     </div>
 
@@ -419,21 +423,7 @@ const Dashboard = () => {
                         )}
                     </div>
                     )}
-                    {/* Tabs */}
-                    <div className="flex gap-4 border-b border-orange-900/10 pb-4">
-                        <button 
-                            onClick={() => setActiveTab('study')}
-                            className={`px-6 py-2.5 rounded-full font-bold transition-all ${activeTab === 'study' ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white/50 text-slate-500 hover:bg-white/80'}`}
-                        >
-                            Study View
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('audit')}
-                            className={`px-6 py-2.5 rounded-full font-bold transition-all ${activeTab === 'audit' ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white/50 text-slate-500 hover:bg-white/80'}`}
-                        >
-                            Audit Mode
-                        </button>
-                    </div>
+
                 </header>
 
                 {activeTab === 'audit' ? (
