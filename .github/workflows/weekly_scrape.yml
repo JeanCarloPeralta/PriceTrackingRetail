@@ -39,6 +39,11 @@ jobs:
           git commit -m "Automated Weekly Scrape: $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push origin main
 
+      - name: Sync to Firestore Database
+        run: node scripts/migrate_to_firestore.js
+        env:
+          SERVICE_ACCOUNT_KEY: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+
       - name: Build Dashboard
         run: npm run build
 

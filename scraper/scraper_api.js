@@ -143,27 +143,32 @@ async function scrapeWalmartAPI() {
             const existingP = productMap.get(key);
             if (!existingP.priceHistory) existingP.priceHistory = [];
             
+            const oldPriceNum = Number(String(existingP.price).replace(/[^0-9.]/g, '')) || 0;
+            const newPriceNum = Number(newP.price) || 0;
+
+            // Always add to history if the day is different, to create a consistent "database" of snapshots
+            const lastHistoryDate = existingP.priceHistory.length > 0 
+                ? new Date(existingP.priceHistory[existingP.priceHistory.length - 1].date).toISOString().split('T')[0]
+                : null;
+            const currentScrapeDate = new Date(newP.scrapedAt).toISOString().split('T')[0];
+
+            if (lastHistoryDate !== currentScrapeDate) {
+                existingP.priceHistory.push({
+                    price: existingP.price,
+                    date: existingP.scrapedAt
+                });
+                updatedCount++;
+            }
+
+            existingP.price = newP.price;
+            existingP.scrapedAt = newP.scrapedAt;
             existingP.discount = newP.discount;
             existingP.image = newP.image; 
             existingP.upc = newP.upc !== 'N/A' ? newP.upc : existingP.upc;
             existingP.category = newP.category || existingP.category;
             existingP.breadcrumbs = newP.breadcrumbs || existingP.breadcrumbs;
-            existingP.link = newP.link; // Update to corrected link
+            existingP.link = newP.link; 
 
-            const oldPriceNum = Number(String(existingP.price).replace(/[^0-9.]/g, '')) || 0;
-            const newPriceNum = Number(newP.price) || 0;
-
-            if (oldPriceNum !== newPriceNum) {
-                existingP.priceHistory.push({
-                    price: existingP.price,
-                    date: existingP.scrapedAt
-                });
-                existingP.price = newP.price;
-                existingP.scrapedAt = newP.scrapedAt;
-                updatedCount++;
-            } else {
-                existingP.scrapedAt = newP.scrapedAt;
-            }
         } else {
             newP.priceHistory = [];
             productMap.set(key, newP);
