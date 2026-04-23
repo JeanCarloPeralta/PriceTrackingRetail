@@ -20,7 +20,17 @@ const keywords = [
     'yogurt',
     'pan',
     'mantequilla',
-    'queso'
+    'queso',
+    'cerveza',
+    'vino',
+    'licor',
+    'whisky',
+    'ron',
+    'vodka',
+    'refrescos',
+    'jugos',
+    'desinfectante',
+    'detergente'
 ];
 
 console.log(`Starting batch scrape for ${keywords.length} keywords...`);
