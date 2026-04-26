@@ -861,11 +861,30 @@ const UpcAudit = ({ products }) => {
             const mxmProduct = hasMxM ? products.find(p => p.upc === upc && p.store === 'Masxmenos') : null;
 
             if (hasWM && hasMxM) {
-                foundInBoth.push({ upc, name: wmProduct?.name || 'Unknown Product' });
+                foundInBoth.push({ 
+                    upc, 
+                    name: wmProduct?.name || 'Unknown Product',
+                    brand: wmProduct?.brand || '',
+                    presentation: wmProduct?.presentation || '',
+                    priceWalmart: wmProduct?.price || 0,
+                    priceMxM: mxmProduct?.price || 0
+                });
             } else if (hasWM && !hasMxM) {
-                onlyInWalmart.push({ upc, name: wmProduct?.name || 'Unknown Product' });
+                onlyInWalmart.push({ 
+                    upc, 
+                    name: wmProduct?.name || 'Unknown Product',
+                    brand: wmProduct?.brand || '',
+                    presentation: wmProduct?.presentation || '',
+                    price: wmProduct?.price || 0
+                });
             } else if (!hasWM && hasMxM) {
-                onlyInMxM.push({ upc, name: mxmProduct?.name || 'Unknown Product' });
+                onlyInMxM.push({ 
+                    upc, 
+                    name: mxmProduct?.name || 'Unknown Product',
+                    brand: mxmProduct?.brand || '',
+                    presentation: mxmProduct?.presentation || '',
+                    price: mxmProduct?.price || 0
+                });
             } else {
                 missingEverywhere.push(upc);
             }
@@ -880,19 +899,107 @@ const UpcAudit = ({ products }) => {
         });
     };
 
+    const exportWalmartCSV = () => {
+        if (!results || results.onlyInWalmart.length === 0) return;
+        const headers = ["Tienda", "UPC", "Marca", "Nombre del Producto", "Presentación", "Precio"];
+        const csvRows = results.onlyInWalmart.map(item => [
+            `"Walmart"`, `"${item.upc}"`, `"${(item.brand || '').replace(/"/g, '""')}"`,
+            `"${(item.name || '').replace(/"/g, '""')}"`, `"${(item.presentation || '').replace(/"/g, '""')}"`,
+            `"${item.price}"`
+        ].join(','));
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'auditoria_walmart.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const exportMxMCSV = () => {
+        if (!results || results.onlyInMxM.length === 0) return;
+        const headers = ["Tienda", "UPC", "Marca", "Nombre del Producto", "Presentación", "Precio"];
+        const csvRows = results.onlyInMxM.map(item => [
+            `"Masxmenos"`, `"${item.upc}"`, `"${(item.brand || '').replace(/"/g, '""')}"`,
+            `"${(item.name || '').replace(/"/g, '""')}"`, `"${(item.presentation || '').replace(/"/g, '""')}"`,
+            `"${item.price}"`
+        ].join(','));
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'auditoria_mxm.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const exportBothCSV = () => {
+        if (!results || results.foundInBoth.length === 0) return;
+        const headers = ["Tienda", "UPC", "Marca", "Nombre del Producto", "Presentación", "Precio"];
+        const csvRows = [];
+        results.foundInBoth.forEach(item => {
+            csvRows.push([
+                `"Walmart"`, `"${item.upc}"`, `"${(item.brand || '').replace(/"/g, '""')}"`,
+                `"${(item.name || '').replace(/"/g, '""')}"`, `"${(item.presentation || '').replace(/"/g, '""')}"`,
+                `"${item.priceWalmart}"`
+            ].join(','));
+            csvRows.push([
+                `"Masxmenos"`, `"${item.upc}"`, `"${(item.brand || '').replace(/"/g, '""')}"`,
+                `"${(item.name || '').replace(/"/g, '""')}"`, `"${(item.presentation || '').replace(/"/g, '""')}"`,
+                `"${item.priceMxM}"`
+            ].join(','));
+        });
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'auditoria_ambos.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const copyMissingUPCs = () => {
+        if (!results || results.missingEverywhere.length === 0) return;
+        const textToCopy = results.missingEverywhere.join('\n');
+        navigator.clipboard.writeText(textToCopy);
+        alert('¡UPCs faltantes copiados al portapapeles!');
+    };
+
+    const parsePrice = (priceVal) => {
+        if (!priceVal) return 0;
+        try {
+            const clean = String(priceVal).replace(/[^0-9,]/g, '').replace(',', '.');
+            const num = parseFloat(clean);
+            return isNaN(num) ? 0 : num;
+        } catch (e) {
+            return 0;
+        }
+    };
+
+    const formatPriceDisplay = (priceVal) => {
+        const p = parsePrice(priceVal);
+        return p > 0 ? p.toLocaleString('es-CR') : 'N/A';
+    };
+
     return (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-3 text-slate-900">
                 <span className="w-1 h-8 bg-blue-500 rounded-full"></span>
-                UPC Availability Audit
+                Auditoría de Disponibilidad UPC
             </h2>
             <p className="text-slate-500 mb-6 border-l-2 border-slate-300 pl-4">
-                Paste a list of UPC codes (one per line) below. We will cross-reference this list with our current Product Feed to tell you exactly which UPCs are missing in Walmart and which are missing in Masxmenos.
+                Pegue una lista de códigos UPC (uno por línea) a continuación. Cruzaremos esta lista con nuestro catálogo actual de productos para decirle exactamente qué UPC faltan en Walmart y cuáles faltan en Masxmenos.
             </p>
 
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-1/4 flex flex-col">
-                    <label className="text-sm font-semibold text-slate-700 mb-2">UPC List (one per line)</label>
+                    <label className="text-sm font-semibold text-slate-700 mb-2">Lista de UPC (uno por línea)</label>
                     <textarea 
                         className="bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-4 min-h-[400px] font-mono text-sm mb-4 focus:ring-slate-900 focus:border-slate-900 transition-all outline-none"
                         value={upcInput}
@@ -903,28 +1010,28 @@ const UpcAudit = ({ products }) => {
                         onClick={handleCheck}
                         className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md transition-all"
                     >
-                        Run UPC Audit
+                        Ejecutar Auditoría UPC
                     </button>
                 </div>
 
                 <div className="w-full md:w-3/4 flex flex-col">
                     {!results ? (
                         <div className="h-full flex items-center justify-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
-                            Click "Run UPC Audit" to scan your items against the database.
+                            Haga clic en "Ejecutar Auditoría UPC" para escanear sus artículos contra la base de datos.
                         </div>
                     ) : (
                         <div className="space-y-6">
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center shadow-sm">
-                                    <div className="text-slate-500 text-sm font-semibold mb-1">Total Valid UPCs</div>
+                                    <div className="text-slate-500 text-sm font-semibold mb-1">Total UPCs Válidos</div>
                                     <div className="text-3xl font-bold text-slate-900">{results.totalChecked}</div>
                                 </div>
                                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center shadow-sm">
-                                    <div className="text-emerald-700 text-sm font-semibold mb-1">Found in Both Stores</div>
+                                    <div className="text-emerald-700 text-sm font-semibold mb-1">Encontrados en Ambas Tiendas</div>
                                     <div className="text-3xl font-bold text-emerald-600">{results.foundInBoth.length}</div>
                                 </div>
                                 <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-center shadow-sm">
-                                    <div className="text-rose-700 text-sm font-semibold mb-1">Missing Everywhere</div>
+                                    <div className="text-rose-700 text-sm font-semibold mb-1">Faltantes en Todas Partes</div>
                                     <div className="text-3xl font-bold text-rose-600">
                                         {results.missingEverywhere.length}
                                     </div>
@@ -934,20 +1041,27 @@ const UpcAudit = ({ products }) => {
                             {/* Only in Walmart List */}
                             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                                 <h3 className="text-blue-600 font-bold mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <span>Products Exclusively Found in Walmart</span>
-                                    <span className="bg-blue-100 px-2 py-1 rounded text-xs text-blue-800">{results.onlyInWalmart.length} items</span>
+                                    <span>Productos Exclusivos en Walmart</span>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={exportWalmartCSV} className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200 transition-colors" title="Exportar CSV">Exportar</button>
+                                        <span className="bg-blue-100 px-2 py-1 rounded text-xs text-blue-800">{results.onlyInWalmart.length} artículos</span>
+                                    </div>
                                 </h3>
                                 {results.onlyInWalmart.length === 0 ? (
-                                    <div className="text-slate-400 text-sm text-center py-8">None exclusively in Walmart!</div>
+                                    <div className="text-slate-400 text-sm text-center py-8">¡Ninguno exclusivo en Walmart!</div>
                                 ) : (
                                     <div className="max-h-[350px] overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-200">
                                         {results.onlyInWalmart.map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors">
-                                                <div className="bg-white border border-slate-200 px-3 py-1 rounded-md text-slate-500 font-mono text-xs w-[140px] text-center shadow-sm">
+                                                <div className="bg-white border border-slate-200 px-3 py-1 rounded-md text-slate-500 font-mono text-xs w-[140px] text-center shadow-sm shrink-0">
                                                     {item.upc}
                                                 </div>
                                                 <div className="text-slate-800 text-sm font-bold truncate flex-1" title={item.name}>
                                                     {item.name}
+                                                    <span className="text-xs text-slate-400 font-normal ml-2 block sm:inline">{item.brand} • {item.presentation}</span>
+                                                </div>
+                                                <div className="text-blue-600 font-bold text-sm shrink-0">
+                                                    {formatPriceDisplay(item.price) !== 'N/A' ? '₡' : ''}{formatPriceDisplay(item.price)}
                                                 </div>
                                             </div>
                                         ))}
@@ -956,22 +1070,29 @@ const UpcAudit = ({ products }) => {
                             </div>
 
                             {/* Only in Masxmenos List */}
-                            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mt-6">
                                 <h3 className="text-orange-600 font-bold mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <span>Products Exclusively Found in Masxmenos</span>
-                                    <span className="bg-orange-100 px-2 py-1 rounded text-xs text-orange-800">{results.onlyInMxM.length} items</span>
+                                    <span>Productos Exclusivos en Masxmenos</span>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={exportMxMCSV} className="text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200 transition-colors" title="Exportar CSV">Exportar</button>
+                                        <span className="bg-orange-100 px-2 py-1 rounded text-xs text-orange-800">{results.onlyInMxM.length} artículos</span>
+                                    </div>
                                 </h3>
                                 {results.onlyInMxM.length === 0 ? (
-                                    <div className="text-slate-400 text-sm text-center py-8">None exclusively in Masxmenos!</div>
+                                    <div className="text-slate-400 text-sm text-center py-8">¡Ninguno exclusivo en Masxmenos!</div>
                                 ) : (
                                     <div className="max-h-[350px] overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-200">
                                         {results.onlyInMxM.map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-orange-200 transition-colors">
-                                                <div className="bg-white border border-slate-200 px-3 py-1 rounded-md text-slate-500 font-mono text-xs w-[140px] text-center shadow-sm">
+                                                <div className="bg-white border border-slate-200 px-3 py-1 rounded-md text-slate-500 font-mono text-xs w-[140px] text-center shadow-sm shrink-0">
                                                     {item.upc}
                                                 </div>
                                                 <div className="text-slate-800 text-sm font-bold truncate flex-1" title={item.name}>
                                                     {item.name}
+                                                    <span className="text-xs text-slate-400 font-normal ml-2 block sm:inline">{item.brand} • {item.presentation}</span>
+                                                </div>
+                                                <div className="text-orange-600 font-bold text-sm shrink-0">
+                                                    {formatPriceDisplay(item.price) !== 'N/A' ? '₡' : ''}{formatPriceDisplay(item.price)}
                                                 </div>
                                             </div>
                                         ))}
@@ -981,10 +1102,13 @@ const UpcAudit = ({ products }) => {
                             
                             {/* Missing Everywhere List */}
                             {results.missingEverywhere.length > 0 && (
-                                <div className="bg-rose-50 border border-rose-200 rounded-xl p-5 shadow-sm">
+                                <div className="bg-rose-50 border border-rose-200 rounded-xl p-5 shadow-sm mt-6">
                                     <h3 className="text-rose-700 font-bold mb-4 flex items-center justify-between border-b border-rose-100 pb-3">
-                                        <span>Products Missing Everywhere</span>
-                                        <span className="bg-rose-100 px-2 py-1 rounded text-xs text-rose-800">{results.missingEverywhere.length} items</span>
+                                        <span>Productos Faltantes en Todas Partes</span>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={copyMissingUPCs} className="text-xs bg-rose-200 hover:bg-rose-300 text-rose-800 px-2 py-1 rounded transition-colors" title="Copiar al portapapeles">Copiar Todos</button>
+                                            <span className="bg-rose-100 px-2 py-1 rounded text-xs text-rose-800">{results.missingEverywhere.length} artículos</span>
+                                        </div>
                                     </h3>
                                     <div className="max-h-[200px] overflow-y-auto pr-2 flex flex-wrap gap-2 scrollbar-thin scrollbar-thumb-slate-200">
                                         {results.missingEverywhere.map((upc, idx) => (
@@ -999,23 +1123,44 @@ const UpcAudit = ({ products }) => {
                             {/* Found Products List */}
                             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mt-6">
                                 <h3 className="text-emerald-700 font-bold mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <span>Products Accurately Found in Both Stores</span>
-                                    <span className="bg-emerald-100 px-2 py-1 rounded text-xs text-emerald-800">{results.foundInBoth.length} items</span>
+                                    <span>Productos Encontrados en Ambas Tiendas</span>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={exportBothCSV} className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded border border-emerald-200 transition-colors" title="Exportar CSV">Exportar</button>
+                                        <span className="bg-emerald-100 px-2 py-1 rounded text-xs text-emerald-800">{results.foundInBoth.length} artículos</span>
+                                    </div>
                                 </h3>
                                 {results.foundInBoth.length === 0 ? (
-                                    <div className="text-slate-400 text-sm text-center py-8">No overlapping products found.</div>
+                                    <div className="text-slate-400 text-sm text-center py-8">No se encontraron productos en común.</div>
                                 ) : (
                                     <div className="max-h-[350px] overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-slate-200">
-                                        {results.foundInBoth.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-emerald-200 transition-colors">
-                                                <div className="bg-white border border-slate-200 px-3 py-1 rounded-md text-slate-500 font-mono text-xs w-[140px] text-center shadow-sm">
+                                        {results.foundInBoth.map((item, idx) => {
+                                            const wPrice = parsePrice(item.priceWalmart);
+                                            const mPrice = parsePrice(item.priceMxM);
+                                            const isWalmartCheaper = wPrice > 0 && (wPrice < mPrice || mPrice === 0);
+                                            const isMxMCheaper = mPrice > 0 && (mPrice < wPrice || wPrice === 0);
+                                            
+                                            return (
+                                            <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-emerald-200 transition-colors">
+                                                <div className="bg-white border border-slate-200 px-3 py-1 rounded-md text-slate-500 font-mono text-xs w-[140px] text-center shadow-sm shrink-0">
                                                     {item.upc}
                                                 </div>
                                                 <div className="text-slate-800 text-sm font-bold truncate flex-1" title={item.name}>
                                                     {item.name}
+                                                    <span className="text-xs text-slate-400 font-normal ml-2 block sm:inline">{item.brand} • {item.presentation}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 shrink-0 text-sm bg-white border border-slate-200 rounded-lg p-2 shadow-sm">
+                                                    <div className={`flex flex-col items-center px-2 ${isWalmartCheaper ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400">Walmart</span>
+                                                        {formatPriceDisplay(item.priceWalmart) !== 'N/A' ? '₡' : ''}{formatPriceDisplay(item.priceWalmart)}
+                                                    </div>
+                                                    <div className="w-px h-6 bg-slate-200"></div>
+                                                    <div className={`flex flex-col items-center px-2 ${isMxMCheaper ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>
+                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400">MxM</span>
+                                                        {formatPriceDisplay(item.priceMxM) !== 'N/A' ? '₡' : ''}{formatPriceDisplay(item.priceMxM)}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        )})}
                                     </div>
                                 )}
                             </div>

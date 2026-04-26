@@ -79,15 +79,24 @@ const Dashboard = () => {
             
             if (data.length === 0) throw new Error('Firestore empty, falling back to local');
             
-            const fixedData = data.map(p => {
+            const fixPresentation = (p) => {
                 let presentation = p.presentation;
                 if (!presentation || presentation === 'N/A') {
-                    if (p.name.includes('-')) {
-                        presentation = p.name.split('-').slice(1).join('-').trim();
+                    if (p.name.includes(' - ')) {
+                        presentation = p.name.split(' - ').pop().trim();
+                    } else {
+                        const match = p.name.match(/(\d+(?:\.\d+)?\s*(?:mg|kg|ml|l|gr|g|oz|lb|pcs|unidades|unid|und|m|cm|mm|pz|pza|uds|ud))\s*$/i);
+                        if (match) {
+                            presentation = match[1];
+                        } else {
+                            presentation = 'N/A';
+                        }
                     }
                 }
                 return { ...p, store: p.store || 'Walmart', presentation };
-            });
+            };
+
+            const fixedData = data.map(fixPresentation);
             setProducts(fixedData);
             setLastUpdated(new Date());
         } catch (error) {
@@ -96,15 +105,25 @@ const Dashboard = () => {
                 const timestamp = new Date().getTime();
                 const response = await fetch(`/data/products.json?t=${timestamp}`);
                 const data = await response.json();
-                const fixedData = data.map(p => {
+                
+                const fixPresentation = (p) => {
                     let presentation = p.presentation;
                     if (!presentation || presentation === 'N/A') {
-                        if (p.name.includes('-')) {
-                            presentation = p.name.split('-').slice(1).join('-').trim();
+                        if (p.name.includes(' - ')) {
+                            presentation = p.name.split(' - ').pop().trim();
+                        } else {
+                            const match = p.name.match(/(\d+(?:\.\d+)?\s*(?:mg|kg|ml|l|gr|g|oz|lb|pcs|unidades|unid|und|m|cm|mm|pz|pza|uds|ud))\s*$/i);
+                            if (match) {
+                                presentation = match[1];
+                            } else {
+                                presentation = 'N/A';
+                            }
                         }
                     }
                     return { ...p, store: p.store || 'Walmart', presentation };
-                });
+                };
+
+                const fixedData = data.map(fixPresentation);
                 setProducts(fixedData);
                 setLastUpdated(new Date());
             } catch (fallbackError) {
@@ -176,7 +195,7 @@ const Dashboard = () => {
     const exportToCSV = () => {
         if (filteredProducts.length === 0) return;
         
-        const headers = ["Store", "Name", "Brand", "Presentation", "UPC", "Price", "URL"];
+        const headers = ["Tienda", "Nombre", "Marca", "Presentación", "UPC", "Precio", "URL"];
         const csvRows = filteredProducts.map(p => {
             return [
                 `"${p.store || ''}"`,
@@ -190,11 +209,11 @@ const Dashboard = () => {
         });
         
         const csvContent = [headers.join(','), ...csvRows].join('\n');
-        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 'retail_dashboard_export.csv');
+        link.setAttribute('download', 'exportacion_dashboard.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -340,19 +359,19 @@ const Dashboard = () => {
                                 </h1>
                             </div>
                             <div className="flex items-center gap-3 text-slate-500 font-medium">
-                                <span>Retail Intelligence</span>
+                                <span>Inteligencia de Retail</span>
                                 <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                                 <span className="flex items-center gap-1.5">
                                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                                    Monitoring: Walmart, Masxmenos & Auto Mercado
+                                    Monitoreando: Walmart, Masxmenos y Auto Mercado
                                 </span>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-4 mt-4 md:mt-0">
                             <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 hidden md:flex">
-                                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${activeTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Dashboard</button>
-                                <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${activeTab === 'audit' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>UPC Audit</button>
+                                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${activeTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Panel de Control</button>
+                                <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${activeTab === 'audit' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>Auditoría UPC</button>
                             </div>
 
                         </div>
@@ -372,7 +391,7 @@ const Dashboard = () => {
                                 type="text"
                                 value={searchQuery}
                                 onChange={handleSearch}
-                                placeholder="Search by product name or UPC..."
+                                placeholder="Buscar por nombre de producto o UPC..."
                                 className="bg-slate-50 border border-slate-200 text-slate-900 font-medium text-sm rounded-xl focus:ring-slate-900 focus:border-slate-900 block w-full pl-10 p-3.5 transition-all outline-none"
                             />
                         </div>
@@ -384,7 +403,7 @@ const Dashboard = () => {
                                 onChange={(e) => setSelectedStore(e.target.value)}
                                 className="bg-slate-800/50 border border-slate-700 text-white text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-4 appearance-none cursor-pointer"
                             >
-                                <option value="All" className="bg-slate-800">All Stores</option>
+                                <option value="All" className="bg-slate-800">Todas las Tiendas</option>
                                 <option value="Walmart" className="bg-slate-800">Walmart</option>
                                 <option value="Masxmenos" className="bg-slate-800">Masxmenos</option>
                                 <option value="Auto Mercado" className="bg-slate-800">Auto Mercado</option>
@@ -402,7 +421,7 @@ const Dashboard = () => {
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                                 className="bg-slate-800/50 border border-slate-700 text-white text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-4 appearance-none cursor-pointer"
                             >
-                                <option value="" className="bg-slate-800">All Categories</option>
+                                <option value="" className="bg-slate-800">Todas las Categorías</option>
                                 {allCategories.map(cat => (
                                     <option key={cat} value={cat} className="bg-slate-800 text-white">
                                         {cat}
@@ -421,14 +440,14 @@ const Dashboard = () => {
                                 <button
                                     onClick={() => setViewMode('grid')}
                                     className={`p-3 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'} `}
-                                    title="Grid View"
+                                    title="Vista de Cuadrícula"
                                 >
                                     <GridIcon />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
                                     className={`p-3 rounded-lg transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'} `}
-                                    title="List View"
+                                    title="Vista de Lista"
                                 >
                                     <ListIcon />
                                 </button>
@@ -446,30 +465,30 @@ const Dashboard = () => {
                 {/* Stats Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatsCard
-                        title="Total Products"
+                        title="Total de Productos"
                         value={totalItems}
                         icon={<BoxIcon />}
                         trend={12}
                     />
                     <StatsCard
-                        title="Average Price"
+                        title="Precio Promedio"
                         value={`₡${averagePrice}`} // Use Colones symbol
                         icon={<DollarIcon />}
                         trend={-2.5}
                     />
                     <StatsCard
-                        title="Total Basket Cost"
+                        title="Costo Total de Canasta"
                         value={`₡${totalBasketCost.toLocaleString('es-CR')}`}
                         icon={<div className="h-6 w-6"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg></div>}
                         trend={parseFloat(basketTrend)}
                         trendValue={`₡${Math.abs(basketDiff).toLocaleString('es-CR')}`}
                     />
                     <StatsCard
-                        title="MxM vs Walmart (Baseline)"
+                        title="MxM vs Walmart (Base)"
                         value={`${basketShare}%`}
                         icon={<PieChartIcon />}
                         trend={parseFloat(basketShare)}
-                        trendValue={`Based on ${comparativeData.count} items`}
+                        trendValue={`Basado en ${comparativeData.count} artículos`}
                     />
                 </div>
 
@@ -479,16 +498,16 @@ const Dashboard = () => {
                         <div className="flex justify-between items-center mb-0">
                             <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 m-0 mt-1">
                                 <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                Historical Gap Performance% (MxM vs Walmart)
+                                Rendimiento Histórico de Brecha % (MxM vs Walmart)
                             </h3>
                             <button
                                 onClick={() => setShowChart(!showChart)}
                                 className="px-5 py-2 text-sm font-bold bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-all flex items-center gap-2 active:scale-95"
                             >
                                 {showChart ? (
-                                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path></svg> Hide Timeline</>
+                                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path></svg> Ocultar Línea de Tiempo</>
                                 ) : (
-                                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg> View Timeline</>
+                                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg> Ver Línea de Tiempo</>
                                 )}
                             </button>
                         </div>
@@ -525,9 +544,9 @@ const Dashboard = () => {
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
                             <span className="w-1 h-8 bg-blue-500 rounded-full"></span>
-                            Product Feed
+                            Catálogo de Productos
                             {selectedCategory && <span className="text-sm font-normal text-slate-500 ml-2">({selectedCategory})</span>}
-                            {isSearching && <span className="text-sm font-normal text-slate-500 ml-2">(Search Results: {filteredProducts.length})</span>}
+                            {isSearching && <span className="text-sm font-normal text-slate-500 ml-2">(Resultados de Búsqueda: {filteredProducts.length})</span>}
                         </h2>
                         
                         <button 
@@ -536,7 +555,7 @@ const Dashboard = () => {
                             className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${filteredProducts.length === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:scale-95 border border-emerald-100'}`}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            Export to CSV
+                            Exportar a CSV
                         </button>
                     </div>
 
