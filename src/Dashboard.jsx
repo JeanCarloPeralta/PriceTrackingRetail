@@ -10,14 +10,12 @@ import UpcAudit from './components/UpcAudit';
 
 // Safe price parser helper
 const parsePrice = (priceVal) => {
-    if (!priceVal) return 0;
-    try {
-        const clean = String(priceVal).replace(/[^0-9,]/g, '').replace(',', '.');
-        const num = parseFloat(clean);
-        return isNaN(num) ? 0 : num;
-    } catch (e) {
-        return 0;
-    }
+    if (typeof priceVal === 'number') return priceVal;
+    if (!priceVal || priceVal === 'N/A') return 0;
+    // Remove everything except numbers and dots
+    const clean = String(priceVal).replace(/[^0-9.]/g, '');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
 };
 
 // Import icons
