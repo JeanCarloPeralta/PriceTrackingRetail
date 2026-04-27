@@ -76,7 +76,6 @@ const Dashboard = () => {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [showChart, setShowChart] = useState(false);
-    const [sortBy, setSortBy] = useState('name_asc');
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -195,32 +194,8 @@ const Dashboard = () => {
             });
         }
 
-        // Sorting Logic
-        result = [...result].sort((a, b) => {
-            switch (sortBy) {
-                case 'name_asc':
-                    return (a.name || '').localeCompare(b.name || '');
-                case 'name_desc':
-                    return (b.name || '').localeCompare(a.name || '');
-                case 'price_asc':
-                    return parsePrice(a.price) - parsePrice(b.price);
-                case 'price_desc':
-                    return parsePrice(b.price) - parsePrice(a.price);
-                case 'newest':
-                    const dateA = new Date(a.scrapedAt || 0);
-                    const dateB = new Date(b.scrapedAt || 0);
-                    return dateB - dateA;
-                case 'oldest':
-                    const dateAOld = new Date(a.scrapedAt || 8640000000000000);
-                    const dateBOld = new Date(b.scrapedAt || 8640000000000000);
-                    return dateAOld - dateBOld;
-                default:
-                    return 0;
-            }
-        });
-
         return result;
-    }, [products, selectedStore, selectedCategory, debouncedSearchQuery, sortBy]);
+    }, [products, selectedStore, selectedCategory, debouncedSearchQuery]);
 
     const handleSearch = (e) => {
         setSearchQuery(e.target.value);
@@ -467,25 +442,7 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Sort Filter */}
-                        <div className="relative min-w-[180px] w-full md:w-auto">
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="bg-blue-600/10 border border-blue-500/30 text-blue-700 text-sm font-bold rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-4 appearance-none cursor-pointer"
-                            >
-                                <option value="name_asc">🔤 Nombre (A-Z)</option>
-                                <option value="name_desc">🔤 Nombre (Z-A)</option>
-                                <option value="price_asc">💰 Precio: Bajo a Alto</option>
-                                <option value="price_desc">💰 Precio: Alto a Bajo</option>
-                                <option value="newest">📅 Más Recientes</option>
-                                <option value="oldest">📅 Más Antiguos</option>
-                            </select>
-                            {/* Chevron */}
-                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-blue-500">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
+
 
                         {/* View Toggle (Only show if not searching/slot machine mode) */}
                         {!isSearching && (

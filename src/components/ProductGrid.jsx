@@ -10,40 +10,44 @@ const ProductGrid = ({ products }) => {
         setVisibleCount(60);
     }, [products]);
 
-    // Group products by UPC while preserving input order
+    // Group products by UPC
     const groupedProducts = React.useMemo(() => {
-        const processedUpcs = new Set();
-        const result = [];
+        const groups = {};
+        const noUpc = [];
 
         products.forEach(p => {
-            const upc = p.upc;
-            
-            if (!upc || upc === 'N/A') {
-                // Individual item without UPC - preserve its position
-                result.push({ type: 'single', product: { ...p, store: p.store || 'Walmart' } });
+            // Default to Walmart if store is missing (legacy data)
+            const store = p.store || 'Walmart';
+
+            if (!p.upc) {
+                noUpc.push({ type: 'single', product: { ...p, store } });
             } else {
-                // Item with UPC - check if we already grouped it
-                if (!processedUpcs.has(upc)) {
-                    processedUpcs.add(upc);
-                    
-                    // Find all occurrences of this UPC to form a group
-                    const matchingItems = products.filter(item => item.upc === upc);
-                    
-                    if (matchingItems.length > 1) {
-                        // Create comparison group
-                        const wm = matchingItems.find(m => (m.store || 'Walmart') === 'Walmart');
-                        const mm = matchingItems.find(m => m.store === 'Masxmenos');
-                        const am = matchingItems.find(m => m.store === 'Auto Mercado');
-                        result.push({ type: 'comparison', wm, mm, am });
-                    } else {
-                        // Single item with UPC but no competitors found
-                        result.push({ type: 'single', product: { ...matchingItems[0], store: matchingItems[0].store || 'Walmart' } });
-                    }
+                if (!groups[p.upc]) {
+                    groups[p.upc] = { wm: null, mm: null, am: null, products: [] };
                 }
+
+                if (store === 'Walmart') groups[p.upc].wm = { ...p, store };
+                else if (store === 'Masxmenos') groups[p.upc].mm = { ...p, store };
+                else if (store === 'Auto Mercado') groups[p.upc].am = { ...p, store };
+
+                // Keep track just in case duplicates or other stores eventually
+                groups[p.upc].products.push({ ...p, store });
             }
         });
 
-        return result;
+        const result = [];
+        Object.values(groups).forEach(g => {
+            const storeCount = (g.wm ? 1 : 0) + (g.mm ? 1 : 0) + (g.am ? 1 : 0);
+            if (storeCount > 1) {
+                // Match found across at least 2 stores!
+                result.push({ type: 'comparison', wm: g.wm, mm: g.mm, am: g.am });
+            } else {
+                // No match, push individual items
+                g.products.forEach(p => result.push({ type: 'single', product: p }));
+            }
+        });
+
+        return [...result, ...noUpc];
     }, [products]);
 
     return (
