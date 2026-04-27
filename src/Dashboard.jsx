@@ -344,7 +344,8 @@ const Dashboard = () => {
              }
 
              return {
-                  name: new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                  // Interpret the date string at noon to avoid timezone shifts backwards
+                  name: new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                   rawDate: dateStr,
                   gap: parseFloat(gapPercent.toFixed(2))
              };
