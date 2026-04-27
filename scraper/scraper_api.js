@@ -113,7 +113,19 @@ async function scrapeWalmartAPI() {
                             discountText = `${discount}%`;
                         }
                         
-                        const categoryNames = item.categories ? item.categories[0].replace(/^\/|\/$/g, '').split('/') : ['Groceries'];
+                        const brand = item.brand || `${store.name} Generic`;
+                        const productName = item.productName || '';
+                        const categories = item.categories ? item.categories[0].replace(/^\/|\/$/g, '').split('/') : ['Groceries'];
+
+                        // Exclusion Filter: Skip furniture and non-relevant home items (Requested by User)
+                        const furnitureKeywords = ['euroconfort', 'muebles', 'colchones', 'sofás', 'camas', 'mueble'];
+                        const isFurniture = brand.toLowerCase().includes('euroconfort') || 
+                                           productName.toLowerCase().includes('euroconfort') ||
+                                           categories.some(c => furnitureKeywords.some(kw => c.toLowerCase().includes(kw)));
+
+                        if (isFurniture) {
+                            return; // Skip this item
+                        }
 
                         // Fix: Ensure link is absolute and doesn't double-prefix domain
                         let productLink = item.link;
@@ -123,17 +135,17 @@ async function scrapeWalmartAPI() {
 
                         allProducts.push({
                             id: Math.random().toString(36).substr(2, 9),
-                            name: item.productName,
-                            description: item.description || item.productName,
+                            name: productName,
+                            description: item.description || productName,
                             price: Math.round(price).toString(), // Normalize to whole number string
-                            brand: item.brand || `${store.name} Generic`,
+                            brand: brand,
                             presentation: 'N/A', 
                             upc: ean,
                             link: productLink,
                             discount: discountText,
                             image: image,
-                            category: categoryNames.join(' > '),
-                            breadcrumbs: categoryNames,
+                            category: categories.join(' > '),
+                            breadcrumbs: categories,
                             store: store.name,
                             scrapedAt: new Date().toISOString()
                         });
@@ -175,10 +187,20 @@ async function scrapeWalmartAPI() {
     const getProductKey = (p) => `${p.upc}_${p.store}`;
 
     existingProducts.forEach(p => {
+        // Apply furniture filter to existing products during merge as well
+        const brand = p.brand || '';
+        const productName = p.name || '';
+        const cats = p.breadcrumbs || [];
+        const furnitureKeywords = ['euroconfort', 'muebles', 'colchones', 'sofás', 'camas', 'mueble'];
+        const isFurniture = brand.toLowerCase().includes('euroconfort') || 
+                           productName.toLowerCase().includes('euroconfort') ||
+                           cats.some(c => furnitureKeywords.some(kw => c.toLowerCase().includes(kw)));
+        
+        if (isFurniture) return; // Drop existing furniture
+
         if (p.upc && p.upc !== 'N/A') {
             productMap.set(getProductKey(p), p);
         } else {
-            // Fallback to link if UPC is missing
             productMap.set(p.link, p);
         }
     });
@@ -192,7 +214,6 @@ async function scrapeWalmartAPI() {
             const oldPriceNum = Number(String(existingP.price).replace(/[^0-9.]/g, '')) || 0;
             const newPriceNum = Number(newP.price) || 0;
 
-            // Always add to history if the day is different, to create a consistent "database" of snapshots
             const lastHistoryDate = existingP.priceHistory.length > 0 
                 ? new Date(existingP.priceHistory[existingP.priceHistory.length - 1].date).toISOString().split('T')[0]
                 : null;
