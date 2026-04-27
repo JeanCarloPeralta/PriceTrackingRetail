@@ -8,6 +8,18 @@ import ProductGrid from './components/ProductGrid';
 import UpcAudit from './components/UpcAudit';
 
 
+// Safe price parser helper
+const parsePrice = (priceVal) => {
+    if (!priceVal) return 0;
+    try {
+        const clean = String(priceVal).replace(/[^0-9,]/g, '').replace(',', '.');
+        const num = parseFloat(clean);
+        return isNaN(num) ? 0 : num;
+    } catch (e) {
+        return 0;
+    }
+};
+
 // Import icons
 const BoxIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -246,17 +258,7 @@ const Dashboard = () => {
 
     const totalItems = filteredProducts.length;
 
-    // Safe price parser helper
-    const parsePrice = (priceVal) => {
-        if (!priceVal) return 0;
-        try {
-            const clean = String(priceVal).replace(/[^0-9,]/g, '').replace(',', '.');
-            const num = parseFloat(clean);
-            return isNaN(num) ? 0 : num;
-        } catch (e) {
-            return 0;
-        }
-    };
+
 
     const totalBasketCost = filteredProducts.reduce((acc, curr) => {
         return acc + parsePrice(curr.price);
