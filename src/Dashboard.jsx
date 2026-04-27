@@ -295,11 +295,18 @@ const Dashboard = () => {
         if (!filteredProducts.length) return [];
         const datesSet = new Set();
         
-        // Find all unique distinct dates where any scrape happened
+        // Find all unique distinct dates where any scrape happened (ignoring dates before 2026-04-20)
+        const cutoffDate = new Date('2026-04-20T00:00:00Z');
         filteredProducts.forEach(p => {
-             if (p.scrapedAt) datesSet.add(new Date(p.scrapedAt).toISOString().split('T')[0]);
+             if (p.scrapedAt) {
+                 const d = new Date(p.scrapedAt);
+                 if (d >= cutoffDate) datesSet.add(d.toISOString().split('T')[0]);
+             }
              (p.priceHistory || []).forEach(h => {
-                 if (h.date) datesSet.add(new Date(h.date).toISOString().split('T')[0]);
+                 if (h.date) {
+                     const d = new Date(h.date);
+                     if (d >= cutoffDate) datesSet.add(d.toISOString().split('T')[0]);
+                 }
              });
         });
         const sortedDates = Array.from(datesSet).sort();
