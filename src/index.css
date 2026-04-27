@@ -18,8 +18,16 @@
     .animate-fadeIn {
         animation: fadeIn 0.4s ease-out forwards;
     }
+    .animate-loading-bar {
+        animation: loadingBar 2s infinite ease-in-out;
+    }
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes loadingBar {
+        0% { width: 0%; transform: translateX(-100%); }
+        50% { width: 70%; transform: translateX(0); }
+        100% { width: 100%; transform: translateX(100%); }
     }
 }

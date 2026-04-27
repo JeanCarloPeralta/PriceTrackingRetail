@@ -140,7 +140,8 @@ const Dashboard = () => {
                 console.error("Fallback fetch also failed:", fallbackError);
             }
         } finally {
-            setLoading(false);
+            // Add a small delay to ensure smooth transition even if cache is instant
+            setTimeout(() => setLoading(false), 800);
         }
     };
 
@@ -351,6 +352,24 @@ const Dashboard = () => {
              };
         });
     }, [filteredProducts]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
+                <div className="relative">
+                    <div className="w-24 h-24 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <PriceTrackLogo />
+                    </div>
+                </div>
+                <h2 className="mt-8 text-2xl font-bold text-slate-900 animate-pulse">Cargando Catálogo...</h2>
+                <p className="mt-2 text-slate-500 font-medium">Estamos procesando más de 38,000 productos para ti</p>
+                <div className="mt-8 w-64 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 animate-loading-bar"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-800 p-8 selection:bg-blue-100">
