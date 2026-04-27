@@ -9,17 +9,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "scrape": "node scraper/scraper_api.js",
-    "scrape:old": "node scraper/scraper_puppeteer.js",
-    "scrape:am": "node scraper/scraper_automercado.js && node scripts/cleanup_data.js",
     "scrape:all": "npm run scrape",
     "deploy": "npm run build && firebase deploy"
   },
   "dependencies": {
     "firebase": "^12.12.1",
     "firebase-admin": "^13.8.0",
-    "puppeteer": "^24.36.1",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.8.1"

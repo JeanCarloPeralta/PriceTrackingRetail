@@ -13,6 +13,9 @@ jobs:
     permissions:
       contents: write # Needed to push data back
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
