@@ -23,7 +23,7 @@ async function scrapeAutoMercado() {
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: false, 
+            headless: headless, 
             defaultViewport: { width: 1920, height: 1080 },
             args: [
                 '--no-sandbox', 

@@ -8,13 +8,23 @@ import path from 'path';
 const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
 
 async function migrateData() {
-    if (!fs.existsSync(serviceAccountPath)) {
-        console.error("Missing serviceAccountKey.json! Please download it from Firebase Console -> Project Settings -> Service Accounts -> Generate New Private Key.");
-        console.error("Save it to the root of your project as 'serviceAccountKey.json' and run this again.");
+    let serviceAccount;
+
+    if (process.env.SERVICE_ACCOUNT_KEY) {
+        try {
+            serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+            console.log("Using service account from environment variable.");
+        } catch (e) {
+            console.error("Failed to parse SERVICE_ACCOUNT_KEY environment variable as JSON.");
+            process.exit(1);
+        }
+    } else if (fs.existsSync(serviceAccountPath)) {
+        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        console.log("Using service account from local file.");
+    } else {
+        console.error("Missing service account credentials! Provide SERVICE_ACCOUNT_KEY env var or serviceAccountKey.json file.");
         process.exit(1);
     }
-
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
     initializeApp({
         credential: cert(serviceAccount)
