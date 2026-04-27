@@ -20,7 +20,19 @@ const QUERIES = QUERY_ARG ? [QUERY_ARG] : [
     'limpieza', 
     'mascotas',
     'lacteos-y-huevos',
-    'quesos-y-embutidos'
+    'quesos-y-embutidos',
+    'desayuno',
+    'congelados',
+    'panaderia',
+    'galletas',
+    'snacks',
+    'bebes',
+    'farmacia',
+    'hogar',
+    'pastas',
+    'salsas',
+    'enlatados',
+    'helados'
 ];
 const limitArg = parseInt(getArg('limit')) || 0; 
 const PAGE_SIZE = 50;
