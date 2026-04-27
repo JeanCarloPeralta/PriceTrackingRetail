@@ -25,4 +25,4 @@ dist-ssr
 
 # Firebase Credentials
 serviceAccountKey.json
-*.json
+pulperia-m-9137d-firebase-adminsdk-*.json
