@@ -36,8 +36,13 @@ jobs:
           git config --global user.name "PriceTrack Bot"
           git config --global user.email "bot@pricetrack.retail"
           git add public/data/products.json
-          git commit -m "Automated Weekly Scrape: $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          git push origin main
+          # Check if there are changes before committing
+          if git diff --staged --quiet; then
+            echo "No changes in products.json to commit."
+          else
+            git commit -m "Automated Weekly Scrape: $(date +'%Y-%m-%d')"
+            git push origin main
+          fi
 
       - name: Sync to Firestore Database
         run: node scripts/migrate_to_firestore.js
