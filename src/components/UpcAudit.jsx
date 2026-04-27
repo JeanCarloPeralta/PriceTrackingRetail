@@ -838,14 +838,21 @@ const UpcAudit = ({ products }) => {
 
         const uniqueInputUpcs = [...new Set(inputUpcs)];
 
-        // Group actual products by store
-        const walmartUpcs = new Set();
-        const mxmUpcs = new Set();
+        // Helper to normalize UPC for comparison (strip leading zeros)
+        const normalizeUPC = (upc) => {
+            if (!upc) return '';
+            return String(upc).replace(/^0+/, '');
+        };
+
+        // Group actual products by store using normalized UPCs as keys
+        const walmartProductsByUpc = new Map();
+        const mxmProductsByUpc = new Map();
 
         products.forEach(p => {
             if (!p.upc || p.upc === 'N/A') return;
-            if (p.store === 'Walmart') walmartUpcs.add(p.upc);
-            if (p.store === 'Masxmenos') mxmUpcs.add(p.upc);
+            const normUpc = normalizeUPC(p.upc);
+            if (p.store === 'Walmart') walmartProductsByUpc.set(normUpc, p);
+            if (p.store === 'Masxmenos') mxmProductsByUpc.set(normUpc, p);
         });
 
         const foundInBoth = [];
@@ -854,11 +861,13 @@ const UpcAudit = ({ products }) => {
         const missingEverywhere = [];
 
         uniqueInputUpcs.forEach(upc => {
-            const hasWM = walmartUpcs.has(upc);
-            const hasMxM = mxmUpcs.has(upc);
+            const normUpc = normalizeUPC(upc);
+            
+            const wmProduct = walmartProductsByUpc.get(normUpc);
+            const mxmProduct = mxmProductsByUpc.get(normUpc);
 
-            const wmProduct = hasWM ? products.find(p => p.upc === upc && p.store === 'Walmart') : null;
-            const mxmProduct = hasMxM ? products.find(p => p.upc === upc && p.store === 'Masxmenos') : null;
+            const hasWM = !!wmProduct;
+            const hasMxM = !!mxmProduct;
 
             if (hasWM && hasMxM) {
                 foundInBoth.push({ 
