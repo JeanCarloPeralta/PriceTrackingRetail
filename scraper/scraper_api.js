@@ -10,7 +10,17 @@ const getArg = (name) => {
     if (index !== -1) return args[index].split('=')[1];
     return null;
 };
-const QUERY = getArg('query') || 'abarrotes';
+const QUERY_ARG = getArg('query');
+const QUERIES = QUERY_ARG ? [QUERY_ARG] : [
+    'abarrotes', 
+    'cuidado-personal', 
+    'bebidas', 
+    'vinos-y-licores', 
+    'limpieza', 
+    'mascotas',
+    'lacteos-y-huevos',
+    'quesos-y-embutidos'
+];
 const limitArg = parseInt(getArg('limit')) || 0; 
 const PAGE_SIZE = 50;
 
@@ -20,97 +30,101 @@ const STORES = [
 ];
 
 async function scrapeWalmartAPI() {
-    console.log(`[${new Date().toISOString()}] Starting API scraper for query: ${QUERY}`);
+    console.log(`[${new Date().toISOString()}] Starting API scraper for queries: ${QUERIES.join(', ')}`);
     
     let allProducts = [];
 
     for (const store of STORES) {
         console.log(`[${new Date().toISOString()}] ---> Scraping store: ${store.name} (${store.domain})`);
-        let from = 0;
-        let hasMore = true;
-        let storeProductCount = 0;
+        
+        for (const query of QUERIES) {
+            console.log(`[${new Date().toISOString()}] [${store.name}] Searching category: ${query}`);
+            let from = 0;
+            let hasMore = true;
+            let queryProductCount = 0;
 
-        while (hasMore) {
-            let to = from + PAGE_SIZE - 1;
-            const url = `https://${store.domain}/api/catalog_system/pub/products/search/${QUERY}?_from=${from}&_to=${to}`;
-            console.log(`[${new Date().toISOString()}] [${store.name}] Fetching items ${from} to ${to}...`);
-            
-            try {
-                const res = await fetch(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-                        'Accept': 'application/json'
-                    }
-                });
+            while (hasMore) {
+                let to = from + PAGE_SIZE - 1;
+                const url = `https://${store.domain}/api/catalog_system/pub/products/search/${query}?_from=${from}&_to=${to}`;
+                console.log(`[${new Date().toISOString()}] [${store.name}] [${query}] Fetching items ${from} to ${to}...`);
                 
-                if (!res.ok) {
-                    console.error(`[${store.name}] Status Error: ${res.status}`);
-                    break;
-                }
-                
-                const data = await res.json();
-                if (!Array.isArray(data) || data.length === 0) {
-                    console.log(`[${new Date().toISOString()}] [${store.name}] No more items found. Ending pagination.`);
-                    hasMore = false;
-                    break;
-                }
-
-                data.forEach(item => {
-                    const commOffer = item.items[0]?.sellers[0]?.commertialOffer;
-                    const price = commOffer ? commOffer.Price : 0;
-                    const listPrice = commOffer ? commOffer.ListPrice : 0;
-                    const ean = item.items[0]?.ean || 'N/A';
-                    const image = item.items[0]?.images[0]?.imageUrl || 'https://via.placeholder.com/150';
-                    
-                    let discountText = null;
-                    if (listPrice > price && price > 0) {
-                        const discount = Math.round((1 - (price / listPrice)) * 100);
-                        discountText = `${discount}%`;
-                    }
-                    
-                    const categoryNames = item.categories ? item.categories[0].replace(/^\/|\/$/g, '').split('/') : ['Groceries'];
-
-                    // Fix: Ensure link is absolute and doesn't double-prefix domain
-                    let productLink = item.link;
-                    if (productLink && !productLink.startsWith('http')) {
-                        productLink = `https://${store.domain}${productLink}`;
-                    }
-
-                    allProducts.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        name: item.productName,
-                        description: item.description || item.productName,
-                        price: Math.round(price).toString(), // Normalize to whole number string
-                        brand: item.brand || `${store.name} Generic`,
-                        presentation: 'N/A', 
-                        upc: ean,
-                        link: productLink,
-                        discount: discountText,
-                        image: image,
-                        category: categoryNames.join(' > '),
-                        breadcrumbs: categoryNames,
-                        store: store.name,
-                        scrapedAt: new Date().toISOString()
+                try {
+                    const res = await fetch(url, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                            'Accept': 'application/json'
+                        }
                     });
-                });
+                    
+                    if (!res.ok) {
+                        console.error(`[${store.name}] Status Error: ${res.status}`);
+                        break;
+                    }
+                    
+                    const data = await res.json();
+                    if (!Array.isArray(data) || data.length === 0) {
+                        console.log(`[${new Date().toISOString()}] [${store.name}] [${query}] No more items found. Ending pagination.`);
+                        hasMore = false;
+                        break;
+                    }
 
-                storeProductCount += data.length;
-                console.log(`[${new Date().toISOString()}] [${store.name}] Fetched ${data.length} items. Total for store so far: ${storeProductCount}`);
-                
-                if (limitArg > 0 && storeProductCount >= limitArg) {
-                    console.log(`[${new Date().toISOString()}] [${store.name}] Reached limit of ${limitArg}. Stopping for this store.`);
+                    data.forEach(item => {
+                        const commOffer = item.items[0]?.sellers[0]?.commertialOffer;
+                        const price = commOffer ? commOffer.Price : 0;
+                        const listPrice = commOffer ? commOffer.ListPrice : 0;
+                        const ean = item.items[0]?.ean || 'N/A';
+                        const image = item.items[0]?.images[0]?.imageUrl || 'https://via.placeholder.com/150';
+                        
+                        let discountText = null;
+                        if (listPrice > price && price > 0) {
+                            const discount = Math.round((1 - (price / listPrice)) * 100);
+                            discountText = `${discount}%`;
+                        }
+                        
+                        const categoryNames = item.categories ? item.categories[0].replace(/^\/|\/$/g, '').split('/') : ['Groceries'];
+
+                        // Fix: Ensure link is absolute and doesn't double-prefix domain
+                        let productLink = item.link;
+                        if (productLink && !productLink.startsWith('http')) {
+                            productLink = `https://${store.domain}${productLink}`;
+                        }
+
+                        allProducts.push({
+                            id: Math.random().toString(36).substr(2, 9),
+                            name: item.productName,
+                            description: item.description || item.productName,
+                            price: Math.round(price).toString(), // Normalize to whole number string
+                            brand: item.brand || `${store.name} Generic`,
+                            presentation: 'N/A', 
+                            upc: ean,
+                            link: productLink,
+                            discount: discountText,
+                            image: image,
+                            category: categoryNames.join(' > '),
+                            breadcrumbs: categoryNames,
+                            store: store.name,
+                            scrapedAt: new Date().toISOString()
+                        });
+                    });
+
+                    queryProductCount += data.length;
+                    console.log(`[${new Date().toISOString()}] [${store.name}] Fetched ${data.length} items. Total for query so far: ${queryProductCount}`);
+                    
+                    if (limitArg > 0 && queryProductCount >= limitArg) {
+                        console.log(`[${new Date().toISOString()}] [${store.name}] Reached limit of ${limitArg}. Stopping for this query.`);
+                        hasMore = false;
+                    } else {
+                        from += PAGE_SIZE;
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+
+                } catch (e) {
+                    console.error(`[${new Date().toISOString()}] [${store.name}] Error fetching API:`, e.message);
                     hasMore = false;
-                } else {
-                    from += PAGE_SIZE;
-                    await new Promise(r => setTimeout(r, 1000));
                 }
-
-            } catch (e) {
-                console.error(`[${new Date().toISOString()}] [${store.name}] Error fetching API:`, e.message);
-                hasMore = false;
-            }
-        }
-    }
+            } // end while(hasMore)
+        } // end for(query)
+    } // end for(store)
 
     // Merge with existing data
     let existingProducts = [];
