@@ -57,14 +57,19 @@ const ProductHistoryModal = ({ products, onClose }) => {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 text-slate-700">
                                                 {sortedHistory.map((entry, index) => {
+                                                    // Parse price to handle old formats with dots (e.g. "1.270")
+                                                    const parsePrice = (p) => Number(String(p).replace(/[^0-9]/g, '')) || 0;
+                                                    const currentPrice = parsePrice(entry.price);
+                                                    
                                                     // Calculate diff vs previous entry
                                                     const prevEntry = sortedHistory[index + 1];
                                                     let diff = 0;
                                                     let diffPercent = 0;
 
                                                     if (prevEntry) {
-                                                        diff = entry.price - prevEntry.price;
-                                                        diffPercent = (diff / prevEntry.price) * 100;
+                                                        const previousPrice = parsePrice(prevEntry.price);
+                                                        diff = currentPrice - previousPrice;
+                                                        diffPercent = previousPrice > 0 ? (diff / previousPrice) * 100 : 0;
                                                     }
 
                                                     return (
@@ -73,7 +78,7 @@ const ProductHistoryModal = ({ products, onClose }) => {
                                                                 {new Date(entry.date).toLocaleDateString()}
                                                             </td>
                                                             <td className="p-3 text-right font-extrabold text-slate-900">
-                                                                ₡{entry.price.toLocaleString()}
+                                                                ₡{currentPrice.toLocaleString('es-CR')}
                                                             </td>
                                                             <td className="p-3 text-right">
                                                                 {index === sortedHistory.length - 1 ? (
