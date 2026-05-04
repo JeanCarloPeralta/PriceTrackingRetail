@@ -353,6 +353,18 @@ const Dashboard = () => {
         });
     }, [filteredProducts]);
 
+    const latestScrapeDate = React.useMemo(() => {
+        if (!products || products.length === 0) return null;
+        let maxDate = 0;
+        for (const p of products) {
+            if (p.scrapedAt) {
+                const d = new Date(p.scrapedAt).getTime();
+                if (d > maxDate) maxDate = d;
+            }
+        }
+        return maxDate ? new Date(maxDate).toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+    }, [products]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
@@ -392,6 +404,15 @@ const Dashboard = () => {
                                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                                     Monitoreando: Walmart, Masxmenos y Auto Mercado
                                 </span>
+                                {latestScrapeDate && (
+                                    <>
+                                        <span className="w-1 h-1 bg-slate-300 rounded-full hidden sm:block"></span>
+                                        <span className="flex items-center gap-1 text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md text-xs font-bold border border-slate-200 mt-2 sm:mt-0">
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            Actualizado: {latestScrapeDate}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
 
